@@ -1,7 +1,7 @@
 import telebot
 from collections import defaultdict
+from config import TOKEN
 
-TOKEN = "7564442583:AAEZAUzYWrP6Asd7SUjJpig26t5EeE0LlNg"
 
 bot = telebot.TeleBot(TOKEN)
 save_quiz = defaultdict(dict)
