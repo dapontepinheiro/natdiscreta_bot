@@ -1,8 +1,10 @@
 import telebot
+from collections import defaultdict
 
-TOKEN = "7564442583:AAHF3vG46Gcg7n_6WaYkYErQGo1oEdhWixY"
+TOKEN = "7564442583:AAEZAUzYWrP6Asd7SUjJpig26t5EeE0LlNg"
 
 bot = telebot.TeleBot(TOKEN)
+saveQuiz = defaultdict()
 
 questoes = [
     {
@@ -118,6 +120,12 @@ questoes = [
 ]
 
 
+def verificarResposta(mensagem):
+    print(saveQuiz)
+    if len(saveQuiz) > 0:
+        return True
+    return False
+
 texto = """     Bem vindo ao ===Show do Milhão===
 O jogo inclui questões sobre conjuntos, relações, funções, 
 e sequências numéricas, se prepare para forrar!!
@@ -128,9 +136,49 @@ def menu(mensagem):
 
     bot.send_message(chat_id, texto)
 
+
 @bot.message_handler(commands=['iniciar'])
 def iniciar(mensagem):
     chat_id = mensagem.chat.id
+    saveQuiz = {
+        "Num Questao": 0,
+        "Valor Ganho": 0
+    }
     
+    bot.send_message(chat_id, quiz(saveQuiz))
+    print(saveQuiz)
+
+def quiz(saveQuiz):
+    num_questao = saveQuiz["Num Questao"]
+    questao_atual = questoes[num_questao]
+
+    msg = f"""{num_questao+1}ª pergunta valendo R${questao_atual['Valor']}!
+{questao_atual['Pergunta']}
+    A. {questao_atual['Itens']['A']}
+    B. {questao_atual['Itens']['B']}
+    C. {questao_atual['Itens']['C']}
+    D. {questao_atual['Itens']['D']}"""
+
+    return msg
+
+@bot.message_handler(func=verificarResposta)
+def receberResposta(mensagem):
+    chat_id = mensagem.chat.id
+    num_questao = saveQuiz['Num Questao']
+    try:
+        resposta = mensagem.text.upper()
+        if resposta not in ["A","B","C","D"]:
+            bot.send_message(chat_id, "Resposta inválida, tente novamente.")
+            return
+        
+        correta = questoes[num_questao]['Resposta']
+        if correta == resposta:
+            bot.send_message(chat_id, f"Resposta correta, você ganhou R${questoes[num_questao]['Valor']}")
+            saveQuiz['Num Questao'] += 1
+        else:
+            ...
+
+    except:
+        ...
 
 bot.polling()
