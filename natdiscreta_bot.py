@@ -4,7 +4,7 @@ from collections import defaultdict
 TOKEN = "7564442583:AAEZAUzYWrP6Asd7SUjJpig26t5EeE0LlNg"
 
 bot = telebot.TeleBot(TOKEN)
-saveQuiz = defaultdict()
+save_quiz = defaultdict(dict)
 
 questoes = [
     {
@@ -37,29 +37,29 @@ questoes = [
             "C": "Sim, pois ela é simétrica.",
             "D": "Não, porque a relação é apenas uma sequência de pares ordenados."
         },
-        "Resposta": ...,
+        "Resposta": "B",
         "Valor": 500
     },
     {
-        "Pergunta": "Seja f:R→R dada por f(x)=x ^2. Qual é o contradomínio dessa função?",
+        "Pergunta": "Seja f:R→R dada por f(x)=x^2. Qual é o contradomínio dessa função?",
         "Itens": {
             "A": "R",
             "B": "R + (os números reais não negativos)",
             "C": "R - (os números reais negativos)",
             "D": "R ∗(os números reais, exceto 0)"
         },
-        "Resposta": ...,
+        "Resposta": "A",
         "Valor": 1000
     },
     {
-        "Pergunta": "Qual é o valor de f ^ −1(4) se f(x)=2x+1?",
+        "Pergunta": "Qual é o valor de f^-1 (4) se f(x)=2x+1?",
         "Itens": {
             "A": "2",
             "B": "3",
             "C": "4",
             "D": "5"
         },
-        "Resposta": ...,
+        "Resposta": "A",
         "Valor": 2000
     },
     {
@@ -70,7 +70,7 @@ questoes = [
             "C": "17",
             "D": "20"
         },
-        "Resposta": ...,
+        "Resposta": "C",
         "Valor": 5000
     },
     {
@@ -81,7 +81,7 @@ questoes = [
             "C": "128",
             "D": "256"
         },
-        "Resposta": ...,
+        "Resposta": "B",
         "Valor": 10000
     },
     {
@@ -92,7 +92,7 @@ questoes = [
             "C": "4",
             "D": "8"
         },
-        "Resposta": ...,
+        "Resposta": "A",
         "Valor": 25000
     },
     {
@@ -103,7 +103,7 @@ questoes = [
             "C": "{(1,6),(3,4)}",
             "D": "{(2,5),(4,3)}"
         },
-        "Resposta": ...,
+        "Resposta": "A",
         "Valor": 50000
     },
     {
@@ -114,15 +114,14 @@ questoes = [
             "C": "34",
             "D": "55"
         },
-        "Resposta": ...,
+        "Resposta": "A",
         "Valor": 100000
     },
 ]
 
 
 def verificarResposta(mensagem):
-    print(saveQuiz)
-    if len(saveQuiz) > 0:
+    if len(save_quiz) > 0:
         return True
     return False
 
@@ -140,16 +139,15 @@ def menu(mensagem):
 @bot.message_handler(commands=['iniciar'])
 def iniciar(mensagem):
     chat_id = mensagem.chat.id
-    saveQuiz = {
+    save_quiz[chat_id] = {
         "Num Questao": 0,
         "Valor Ganho": 0
     }
     
-    bot.send_message(chat_id, quiz(saveQuiz))
-    print(saveQuiz)
+    quiz(save_quiz, chat_id)
 
-def quiz(saveQuiz):
-    num_questao = saveQuiz["Num Questao"]
+def quiz(save_quiz, chat_id):
+    num_questao = save_quiz[chat_id]['Num Questao']
     questao_atual = questoes[num_questao]
 
     msg = f"""{num_questao+1}ª pergunta valendo R${questao_atual['Valor']}!
@@ -159,12 +157,14 @@ def quiz(saveQuiz):
     C. {questao_atual['Itens']['C']}
     D. {questao_atual['Itens']['D']}"""
 
-    return msg
+    bot.send_message(chat_id, msg)
 
 @bot.message_handler(func=verificarResposta)
 def receberResposta(mensagem):
     chat_id = mensagem.chat.id
-    num_questao = saveQuiz['Num Questao']
+    save_atual = save_quiz[chat_id]
+    num_questao = save_atual['Num Questao']
+
     try:
         resposta = mensagem.text.upper()
         if resposta not in ["A","B","C","D"]:
@@ -174,11 +174,15 @@ def receberResposta(mensagem):
         correta = questoes[num_questao]['Resposta']
         if correta == resposta:
             bot.send_message(chat_id, f"Resposta correta, você ganhou R${questoes[num_questao]['Valor']}")
-            saveQuiz['Num Questao'] += 1
-        else:
-            ...
 
-    except:
-        ...
+            save_atual['Num Questao'] += 1
+            save_atual['Valor Ganho'] += questoes[num_questao]['Valor']
+
+            quiz(save_quiz, chat_id)
+        else:
+            bot.send_message(chat_id, f"Você perdeu com R${save_atual['Valor Ganho']}! Use /iniciar para tentar novamente.")
+
+    except Exception as e:
+        print(e)
 
 bot.polling()
