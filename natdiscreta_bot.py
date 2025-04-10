@@ -118,7 +118,7 @@ questoes = [
         "Valor": 100000
     },
 ]
-
+ajudas = [...]
 
 def verificarResposta(mensagem):
     if len(save_quiz) > 0:
