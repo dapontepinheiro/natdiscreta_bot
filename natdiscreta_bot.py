@@ -1,10 +1,14 @@
-import telebot
+import telebot, random
 from collections import defaultdict
 from config import TOKEN
 
 
 bot = telebot.TeleBot(TOKEN)
 save_quiz = defaultdict(dict)
+
+# Questões
+
+cont_questoes = int(0)
 
 questoes = [
     [
@@ -358,12 +362,34 @@ questoes = [
         }
     ],
 ]
-ajudas = [...]
 
-def verificarResposta(mensagem):
-    if len(save_quiz) > 0:
-        return True
-    return False
+# Ajudas
+
+lista_ajudas = [
+    {
+        'Ajuda': 'Cartas',
+        'Disponíveis': 2
+    },
+    {
+        'Ajuda': 'Trocar',
+        'Disponíveis': 2
+    },
+    {
+        'Ajuda': 'Pular',
+        'Disponíveis': 1
+    }
+]
+ajudas_usadas = []
+
+def exibir_ajudas():
+    texto = ""
+    for ajuda in lista_ajudas:
+        if ajuda['Disponíveis'] > 0:
+            texto += f"{ajuda["Disponíveis"]}x {ajuda['Ajuda']} "
+    return texto
+
+
+# Início
 
 texto = """     Bem vindo ao ===Show do Milhão===
 O jogo inclui questões sobre conjuntos, relações, funções, 
@@ -380,30 +406,42 @@ def menu(mensagem):
 def iniciar(mensagem):
     chat_id = mensagem.chat.id
     save_quiz[chat_id] = {
-        "Num Questao": 0,
+        "Fase": 0,
         "Valor Ganho": 0
     }
     
-    quiz(save_quiz, chat_id)
+    quiz(chat_id)
 
-def quiz(save_quiz, chat_id):
-    num_questao = save_quiz[chat_id]['Num Questao']
-    questao_atual = questoes[num_questao]
+
+# Quiz
+
+def quiz(chat_id):
+    num_questao = save_quiz[chat_id]['Fase']
+    questao_atual = questoes[num_questao][cont_questoes]
 
     msg = f"""{num_questao+1}ª pergunta valendo R${questao_atual['Valor']}!
 {questao_atual['Pergunta']}
     A. {questao_atual['Itens']['A']}
     B. {questao_atual['Itens']['B']}
     C. {questao_atual['Itens']['C']}
-    D. {questao_atual['Itens']['D']}"""
+    D. {questao_atual['Itens']['D']}
+    
+    Ajudas:  {exibir_ajudas()}"""
 
     bot.send_message(chat_id, msg)
+
+
+# Verificando resposta
+
+def verificarResposta(mensagem):
+    return len(save_quiz) > 0 and mensagem.text.upper() in ['A','B','C','D']
 
 @bot.message_handler(func=verificarResposta)
 def receberResposta(mensagem):
     chat_id = mensagem.chat.id
     save_atual = save_quiz[chat_id]
-    num_questao = save_atual['Num Questao']
+    num_questao = save_atual['Fase']
+    questao_atual = questoes[num_questao][cont_questoes]
 
     try:
         resposta = mensagem.text.upper()
@@ -411,18 +449,56 @@ def receberResposta(mensagem):
             bot.send_message(chat_id, "Resposta inválida, tente novamente.")
             return
         
-        correta = questoes[num_questao]['Resposta']
+        correta = questao_atual['Resposta']
         if correta == resposta:
-            bot.send_message(chat_id, f"Resposta correta, você ganhou R${questoes[num_questao]['Valor']}")
+            bot.send_message(chat_id, f"Resposta correta, você ganhou R${questao_atual['Valor']}")
 
-            save_atual['Num Questao'] += 1
-            save_atual['Valor Ganho'] += questoes[num_questao]['Valor']
+            save_atual['Fase'] += 1
+            save_atual['Valor Ganho'] += questao_atual['Valor']
 
-            quiz(save_quiz, chat_id)
+            quiz(chat_id)
         else:
             bot.send_message(chat_id, f"Você perdeu com R${save_atual['Valor Ganho']}! Use /iniciar para tentar novamente.")
 
     except Exception as e:
         print(e)
+
+# Verificando ajudas
+
+def verificar_ajuda(mensagem):
+    return mensagem.text.capitalize() in ["Carta", "Trocar", "Pular"]
+    
+@bot.message_handler(func=verificar_ajuda)
+def usar_ajudas(mensagem):
+    global cont_questoes
+    chat_id = mensagem.chat.id
+    ajuda = mensagem.text.capitalize()
+    if ajuda == "Cartas":
+        if lista_ajudas[0]['Disponíveis'] > 0:
+            lista_ajudas[0]['Disponíveis'] -= 1
+            ...
+        else:
+            bot.send_message(chat_id, "Ajuda indisponível.")
+            return
+
+    elif ajuda == "Trocar":
+        if lista_ajudas[1]['Disponíveis'] > 0:
+            lista_ajudas[1]['Disponíveis'] -= 1
+            cont_questoes += 1
+        else:
+            bot.send_message(chat_id, "Ajuda indisponível.")
+            return
+
+    elif ajuda == "Pular":
+        if lista_ajudas[2]['Disponíveis'] > 0:
+            lista_ajudas[2]['Disponíveis'] -= 1
+            save_quiz[chat_id]['Fase'] += 1
+        else:
+            bot.send_message(chat_id, "Ajuda indisponível.")
+            return
+
+
+    quiz(chat_id)
+
 
 bot.polling()
