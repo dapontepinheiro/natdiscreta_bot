@@ -265,7 +265,7 @@ questoes = [
                 "C": "4",
                 "D": "8"
             },
-            "Resposta": "B",
+            "Resposta": "A",
             "Valor": 25000
         },
         {
@@ -404,6 +404,7 @@ def menu(mensagem):
 
 @bot.message_handler(commands=['iniciar'])
 def iniciar(mensagem):
+    lista_ajudas[0]['Disponíveis'],lista_ajudas[1]['Disponíveis'],lista_ajudas[2]['Disponíveis'] = 2,2,1
     chat_id = mensagem.chat.id
     save_quiz[chat_id] = {
         "Fase": 0,
@@ -416,19 +417,22 @@ def iniciar(mensagem):
 # Quiz
 
 def quiz(chat_id):
-    num_questao = save_quiz[chat_id]['Fase']
-    questao_atual = questoes[num_questao][cont_questoes]
+    try:
+        num_questao = save_quiz[chat_id]['Fase']
+        questao_atual = questoes[num_questao][cont_questoes]
 
-    msg = f"""{num_questao+1}ª pergunta valendo R${questao_atual['Valor']}!
-{questao_atual['Pergunta']}
-    A. {questao_atual['Itens']['A']}
-    B. {questao_atual['Itens']['B']}
-    C. {questao_atual['Itens']['C']}
-    D. {questao_atual['Itens']['D']}
-    
-    Ajudas:  {exibir_ajudas()}"""
+        msg = f"""{num_questao+1}ª pergunta valendo R${questao_atual['Valor']}!
+    {questao_atual['Pergunta']}
+        A. {questao_atual['Itens']['A']}
+        B. {questao_atual['Itens']['B']}
+        C. {questao_atual['Itens']['C']}
+        D. {questao_atual['Itens']['D']}
+        
+        Ajudas:  {exibir_ajudas()}"""
 
-    bot.send_message(chat_id, msg)
+        bot.send_message(chat_id, msg)
+    except IndexError:
+        bot.send_message(chat_id,"Você venceu o show do milhão!")
 
 
 # Verificando resposta
@@ -466,7 +470,7 @@ def receberResposta(mensagem):
 # Verificando ajudas
 
 def verificar_ajuda(mensagem):
-    return mensagem.text.capitalize() in ["Carta", "Trocar", "Pular"]
+    return mensagem.text.capitalize() in ["Cartas", "Trocar", "Pular"]
     
 @bot.message_handler(func=verificar_ajuda)
 def usar_ajudas(mensagem):
@@ -476,7 +480,28 @@ def usar_ajudas(mensagem):
     if ajuda == "Cartas":
         if lista_ajudas[0]['Disponíveis'] > 0:
             lista_ajudas[0]['Disponíveis'] -= 1
-            ...
+            
+            num_questao = save_quiz[chat_id]['Fase']
+            questao_atual = questoes[num_questao][cont_questoes]
+            resposta = questao_atual['Resposta']
+            
+            opcoes = ""
+            for op in questao_atual['Itens'].keys():
+                if op != resposta:
+                    opcoes += op
+            
+            qtd_remover = random.randint(0, 3)
+            remover = random.sample(opcoes, qtd_remover)
+            
+            msg = f"🃏 Cartas usadas! {qtd_remover} alternativa(s) foram removidas:\n\n"
+            msg += f"{questao_atual['Pergunta']}\n"
+            
+            for op, texto in questao_atual['Itens'].items():
+                if op not in remover:
+                    msg += f"    {op}. {texto}\n"
+
+            bot.send_message(chat_id, msg)
+
         else:
             bot.send_message(chat_id, "Ajuda indisponível.")
             return
@@ -485,6 +510,7 @@ def usar_ajudas(mensagem):
         if lista_ajudas[1]['Disponíveis'] > 0:
             lista_ajudas[1]['Disponíveis'] -= 1
             cont_questoes += 1
+            quiz(chat_id)
         else:
             bot.send_message(chat_id, "Ajuda indisponível.")
             return
@@ -493,12 +519,12 @@ def usar_ajudas(mensagem):
         if lista_ajudas[2]['Disponíveis'] > 0:
             lista_ajudas[2]['Disponíveis'] -= 1
             save_quiz[chat_id]['Fase'] += 1
+            quiz(chat_id)
         else:
             bot.send_message(chat_id, "Ajuda indisponível.")
             return
 
 
-    quiz(chat_id)
 
 
 bot.polling()
