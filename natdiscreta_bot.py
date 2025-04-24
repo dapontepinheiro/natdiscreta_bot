@@ -391,10 +391,10 @@ def exibir_ajudas():
 
 # Início
 
-texto = """     Bem vindo ao ===Show do Milhão===
+texto = """=========💸Bem vindo ao Show do Milhão💸=========
 O jogo inclui questões sobre conjuntos, relações, funções, 
-e sequências numéricas, se prepare para forrar!!
-Selecione /iniciar para iniciar o jogo"""
+        e sequências numéricas, se prepare para forrar!!
+                Selecione /iniciar para iniciar o jogo"""
 @bot.message_handler(commands=['start'])
 def menu(mensagem):
     chat_id = mensagem.chat.id
@@ -432,7 +432,7 @@ def quiz(chat_id):
 
         bot.send_message(chat_id, msg)
     except IndexError:
-        bot.send_message(chat_id,"Você venceu o show do milhão!")
+        bot.send_message(chat_id,"💸Você venceu o show do milhão!💸")
 
 
 # Verificando resposta
@@ -462,7 +462,7 @@ def receberResposta(mensagem):
 
             quiz(chat_id)
         else:
-            bot.send_message(chat_id, f"Você perdeu com R${save_atual['Valor Ganho']}! Use /iniciar para tentar novamente.")
+            bot.send_message(chat_id, f"Você perdeu com R${save_atual['Valor Ganho']}!❌\n Use /iniciar para tentar novamente.")
 
     except Exception as e:
         print(e)
