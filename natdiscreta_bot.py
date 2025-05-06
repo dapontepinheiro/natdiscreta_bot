@@ -467,6 +467,7 @@ def receberResposta(mensagem):
     except Exception as e:
         print(e)
 
+
 # Verificando ajudas
 
 def verificar_ajuda(mensagem):
@@ -477,12 +478,14 @@ def usar_ajudas(mensagem):
     global cont_questoes
     chat_id = mensagem.chat.id
     ajuda = mensagem.text.capitalize()
+    
+    save_atual = save_quiz[chat_id]
+    num_questao = save_atual['Fase']
+    questao_atual = questoes[num_questao][cont_questoes]
     if ajuda == "Cartas":
         if lista_ajudas[0]['Disponíveis'] > 0:
             lista_ajudas[0]['Disponíveis'] -= 1
             
-            num_questao = save_quiz[chat_id]['Fase']
-            questao_atual = questoes[num_questao][cont_questoes]
             resposta = questao_atual['Resposta']
             
             opcoes = ""
@@ -518,7 +521,8 @@ def usar_ajudas(mensagem):
     elif ajuda == "Pular":
         if lista_ajudas[2]['Disponíveis'] > 0:
             lista_ajudas[2]['Disponíveis'] -= 1
-            save_quiz[chat_id]['Fase'] += 1
+            save_atual['Fase'] += 1
+            save_atual['Valor Ganho'] += questao_atual['Valor']
             quiz(chat_id)
         else:
             bot.send_message(chat_id, "Ajuda indisponível.")
